@@ -1,4 +1,3 @@
-Here is the formatted README file based on your project details. You can copy the Markdown code block below directly into your `README.md` file.
 
 ```markdown
 # Campus Vote: VSU Election Platform
