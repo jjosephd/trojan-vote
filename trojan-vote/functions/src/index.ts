@@ -5,6 +5,9 @@ admin.initializeApp();
 
 export * from "./onUserCreate";
 export * from "./submitVote";
+export * from "./manageElection";
+export * from "./manageCandidate";
+export * from "./tallyResults";
 
 export const helloWorld = functions.https.onRequest((request, response) => {
   response.send("Hello from Firebase!");

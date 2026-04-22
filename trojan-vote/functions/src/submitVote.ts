@@ -47,7 +47,7 @@ export const submitVote = onCall(async (request: CallableRequest<SubmitVoteData>
     }
 
     // 3. Verify candidate exists
-    const candidateRef = db.collection("candidates").doc(candidateId);
+    const candidateRef = electionRef.collection("candidates").doc(candidateId);
     const candidateDoc = await transaction.get(candidateRef);
 
     if (!candidateDoc.exists) {

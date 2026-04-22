@@ -27,15 +27,17 @@ export function validateElectionId(electionId: any): string {
  * @param data The candidate data to validate.
  * @throws ValidationError if invalid.
  */
-export function validateCandidateData(data: any): { name: string; description?: string } {
+export function validateCandidateData(data: any): { name: string; position: string; description?: string } {
   if (!data || typeof data !== "object") {
     throw new ValidationError("Invalid candidate data.");
   }
 
   const name = requiredString(data.name, "Candidate name");
+  const position = requiredString(data.position, "Position");
 
   return {
     name,
+    position,
     description: typeof data.description === "string" ? data.description.trim() : undefined,
   };
 }
