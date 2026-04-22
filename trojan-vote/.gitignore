@@ -26,3 +26,13 @@ dist-ssr
 # Developer Agent
 */lessons.md
 */todo.md
+
+# Firebase
+.firebase/
+*-debug.log
+.runtimeconfig.json
+firebase-debug.log*
+firestore-debug.log*
+pubsub-debug.log*
+ui-debug.log*
+firebase-export*
