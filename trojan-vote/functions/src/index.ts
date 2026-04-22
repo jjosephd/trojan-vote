@@ -3,6 +3,9 @@ import * as admin from "firebase-admin";
 
 admin.initializeApp();
 
+export * from "./onUserCreate";
+export * from "./submitVote";
+
 export const helloWorld = functions.https.onRequest((request, response) => {
   response.send("Hello from Firebase!");
 });

@@ -4,10 +4,10 @@
 
 ## Checklist
 
-- [ ] **Implement `onUserCreate` Function (`functions/src/onUserCreate.ts`)**
+- [x] **Implement `onUserCreate` Function (`functions/src/onUserCreate.ts`)**
   - Set an Auth `onCreate` trigger.
   - Create a new document in `users/{uid}` with role `"student"` and `verified: false`.
-- [ ] **Implement `submitVote` Function (`functions/src/submitVote.ts`)**
+- [x] **Implement `submitVote` Function (`functions/src/submitVote.ts`)**
   - Set an HTTPS Callable trigger.
   - Call `assertAuthenticated`.
   - Open a Firestore transaction:
@@ -16,8 +16,8 @@
     - If already voted, throw `409 Conflict`.
     - If eligible, create vote document in `votes/`.
     - Increment `voteCount` on the candidate document atomically.
-- [ ] **Setup Callable Wrapper (`src/lib/functions.ts`)**
+- [x] **Setup Callable Wrapper (`src/lib/functions.ts`)**
   - Create typed wrapper for `submitVote` using `httpsCallable`.
-- [ ] **Verification**
+- [x] **Verification**
   - Test `onUserCreate` via emulator by simulating a new user login.
   - Test `submitVote` via emulator to ensure atomicity and that duplicates are rejected.
