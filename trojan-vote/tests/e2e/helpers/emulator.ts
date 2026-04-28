@@ -83,7 +83,10 @@ export async function setFirestoreDoc(
 
   const res = await fetch(url, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer owner",
+    },
     body: JSON.stringify({ fields: firestoreFields }),
   });
   if (!res.ok) throw new Error(`setFirestoreDoc failed: ${await res.text()}`);
