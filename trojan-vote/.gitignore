@@ -30,6 +30,8 @@ dist-ssr
 */todo.md
 
 # Firebase
+.env
+.env.*
 .firebase/
 *-debug.log
 .runtimeconfig.json
