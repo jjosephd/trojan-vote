@@ -306,7 +306,7 @@ export default function AdminDashboard() {
   )
 
   return (
-    <div className="cv-page-wide">
+    <div className="cv-page-wide" data-testid="admin-dashboard">
       {toast && <div className={`cv-toast cv-toast-${toast.type}`}>{toast.msg}</div>}
 
       {/* Candidate Modal */}
@@ -367,7 +367,9 @@ export default function AdminDashboard() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 2, marginTop: 24, borderBottom: '2px solid #e8edf5', flexWrap: 'wrap' }}>
           {(['results', 'charts', 'candidates', 'election', 'audit'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              {...(tab === 'election' ? { 'data-testid': 'admin-manage-elections' } : {})}
+              style={{
               background: 'none', border: 'none', padding: '10px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               color: activeTab === tab ? 'var(--navy2)' : 'var(--gray)',
               borderBottom: activeTab === tab ? '2px solid var(--navy2)' : '2px solid transparent',

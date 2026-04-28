@@ -294,7 +294,7 @@ export default function StudentDashboard({ user }: Props) {
   )
 
   return (
-    <div className="cv-page">
+    <div className="cv-page" data-testid="student-dashboard">
       {toast && <div className={`cv-toast cv-toast-${toast.type}`}>{toast.msg}</div>}
 
       {/* Confirm modal */}

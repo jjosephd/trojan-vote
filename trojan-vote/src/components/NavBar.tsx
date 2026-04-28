@@ -82,7 +82,7 @@ export default function NavBar({ page, setPage, user, onLogout }: Props) {
           background: 'var(--gold)', display: 'flex', alignItems: 'center',
           justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--navy)',
         }}>{initials}</div>
-        <button onClick={onLogout} style={{
+        <button data-testid="logout-button" onClick={onLogout} style={{
           background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.55)',
           border: '1px solid rgba(255,255,255,0.14)', borderRadius: 8,
           padding: '6px 13px', fontSize: 12, cursor: 'pointer',

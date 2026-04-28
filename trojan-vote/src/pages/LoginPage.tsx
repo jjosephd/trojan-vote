@@ -30,18 +30,26 @@ export default function LoginPage({ onLogin }: Props) {
   const [gradeLevel, setGradeLevel] = useState('')
   const [major, setMajor]         = useState('')
   const [error, setError]         = useState('')
+  const [emailError, setEmailError]       = useState('')
+  const [passwordError, setPasswordError] = useState('')
   const [loading, setLoading]     = useState(false)
 
   const resetForm = () => {
     setEmail(''); setPassword(''); setName('')
     setStudentId(''); setGradeLevel(''); setMajor('')
-    setError('')
+    setError(''); setEmailError(''); setPasswordError('')
   }
 
   const handle = async () => {
     setError('')
+    setEmailError('')
+    setPasswordError('')
 
-    if (!email || !password) { setError('Please fill in all fields.'); return }
+    // Per-field validation for empty fields
+    let hasFieldError = false
+    if (!email.trim()) { setEmailError('Email is required.'); hasFieldError = true }
+    if (!password) { setPasswordError('Password is required.'); hasFieldError = true }
+    if (hasFieldError) return
 
     const emailLower = email.toLowerCase().trim()
     const isValidEmail = emailLower.endsWith('@vsu.edu') || emailLower.endsWith('@students.vsu.edu')
@@ -193,7 +201,7 @@ export default function LoginPage({ onLogin }: Props) {
               : 'Create your voter account with your VSU credentials.'}
           </p>
 
-          {error && <div className="cv-error-box" style={{ marginBottom: 20 }}>{error}</div>}
+          {error && <div className="cv-error-box" data-testid="login-error" style={{ marginBottom: 20 }}>{error}</div>}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
@@ -246,15 +254,19 @@ export default function LoginPage({ onLogin }: Props) {
             <div>
               <label className="cv-label">VSU Email *</label>
               <input className="cv-input" type="email"
+                data-testid="login-email"
                 placeholder="yourname@vsu.edu or @students.vsu.edu"
                 value={email} onChange={e => setEmail(e.target.value)} />
+              {emailError && <p data-testid="login-email-error" style={{ fontSize: 12, color: 'var(--red, #c0392b)', marginTop: 4, fontWeight: 600 }}>{emailError}</p>}
             </div>
 
             <div>
               <label className="cv-label">Password *</label>
               <input className="cv-input" type="password" placeholder="••••••••"
+                data-testid="login-password"
                 value={password} onChange={e => setPassword(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handle()} />
+              {passwordError && <p data-testid="login-password-error" style={{ fontSize: 12, color: 'var(--red, #c0392b)', marginTop: 4, fontWeight: 600 }}>{passwordError}</p>}
               {mode === 'signup' && (
                 <p style={{ fontSize: 11, color: 'var(--gray)', marginTop: 4 }}>Minimum 6 characters</p>
               )}
@@ -262,6 +274,7 @@ export default function LoginPage({ onLogin }: Props) {
 
             <button
               className="cv-btn cv-btn-primary cv-btn-lg cv-btn-full"
+              data-testid="login-submit"
               onClick={handle}
               disabled={loading}
               style={{ marginTop: 4 }}
