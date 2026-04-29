@@ -140,9 +140,12 @@ export async function seedStudent(
 export async function seedAdmin(
   suffix = Date.now().toString(),
 ): Promise<SeededAdmin> {
-  const email = `Keva4364@students.vsu.edu`;
-  const password = 'Hellokitty@333';
+  const email = `admin-${suffix}@vsu.edu`;
+  const password = 'AdminPass123!';
   const uid = await createEmulatorUser(email, password);
+  // Wait for the onUserCreate Cloud Function trigger to finish writing its
+  // default { role: 'student' } doc before we overwrite it with role: 'admin'.
+  await new Promise((r) => setTimeout(r, 1_500));
   await setFirestoreDoc('users', uid, { email, role: 'admin', verified: true });
   return { uid, email, password };
 }

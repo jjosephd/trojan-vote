@@ -52,6 +52,24 @@ export default function App() {
     return unsub
   }, [])
 
+  // Handle basic URL routing/redirection based on auth state
+  useEffect(() => {
+    if (loading) return
+    const path = window.location.pathname
+
+    if (!user) {
+      if (!path.startsWith('/login')) {
+        window.history.replaceState(null, '', '/login')
+      }
+    } else {
+      if (path === '/' || path.startsWith('/login')) {
+        window.history.replaceState(null, '', user.role === 'admin' ? '/admin' : '/dashboard')
+      } else if (path.startsWith('/admin') && user.role !== 'admin') {
+        window.history.replaceState(null, '', '/dashboard')
+      }
+    }
+  }, [user, loading])
+
   if (loading) return (
     <div style={{
       minHeight: '100vh',

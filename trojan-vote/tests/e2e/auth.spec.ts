@@ -90,7 +90,7 @@ test('TC-03 | unregistered email shows account-not-found error', async ({
   await fillLoginForm(page, 'nobody@vsu.edu', 'SomePass123!');
 
   await expect(page.locator('[data-testid="login-error"]')).toContainText(
-    /account not found|no user|not found/i,
+    /(No account found|Invalid email|invalid credential)/i,
     { timeout: 6_000 },
   );
 

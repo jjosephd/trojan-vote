@@ -10,5 +10,5 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
     verified: false,
     email: user.email,
     createdAt: FieldValue.serverTimestamp()
-  });
+  }, { merge: true });
 });
