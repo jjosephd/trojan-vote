@@ -10,7 +10,7 @@
  *   Firestore : 8080
  */
 
-const PROJECT_ID = "campus-vote-d0ea8";
+const PROJECT_ID = 'campus-vote-d0ea8';
 const AUTH_EMULATOR = `http://127.0.0.1:9099`;
 const FIRESTORE_EMULATOR = `http://127.0.0.1:8080`;
 
@@ -19,17 +19,18 @@ const FIRESTORE_EMULATOR = `http://127.0.0.1:8080`;
 /** Creates a user account in the Auth emulator and returns the new uid. */
 export async function createEmulatorUser(
   email: string,
-  password: string
+  password: string,
 ): Promise<string> {
   const res = await fetch(
     `${AUTH_EMULATOR}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key`,
     {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, returnSecureToken: true }),
-    }
+    },
   );
-  if (!res.ok) throw new Error(`createEmulatorUser failed: ${await res.text()}`);
+  if (!res.ok)
+    throw new Error(`createEmulatorUser failed: ${await res.text()}`);
   const json = await res.json();
   return json.localId as string;
 }
@@ -37,27 +38,27 @@ export async function createEmulatorUser(
 /** Signs in via the Auth emulator and returns the idToken. */
 export async function signInEmulatorUser(
   email: string,
-  password: string
+  password: string,
 ): Promise<string> {
   const res = await fetch(
     `${AUTH_EMULATOR}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key`,
     {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, returnSecureToken: true }),
-    }
+    },
   );
-  if (!res.ok) throw new Error(`signInEmulatorUser failed: ${await res.text()}`);
+  if (!res.ok)
+    throw new Error(`signInEmulatorUser failed: ${await res.text()}`);
   const json = await res.json();
   return json.idToken as string;
 }
 
 /** Deletes all users from the Auth emulator — use in afterAll. */
 export async function clearAuthEmulator(): Promise<void> {
-  await fetch(
-    `${AUTH_EMULATOR}/emulator/v1/projects/${PROJECT_ID}/accounts`,
-    { method: "DELETE" }
-  );
+  await fetch(`${AUTH_EMULATOR}/emulator/v1/projects/${PROJECT_ID}/accounts`, {
+    method: 'DELETE',
+  });
 }
 
 // ── Firestore helpers ─────────────────────────────────────────────────────────
@@ -66,14 +67,14 @@ export async function clearAuthEmulator(): Promise<void> {
 export async function setFirestoreDoc(
   collectionPath: string,
   docId: string,
-  fields: Record<string, unknown>
+  fields: Record<string, unknown>,
 ): Promise<void> {
   // Convert plain JS values → Firestore REST Value format
   const firestoreFields: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
-    if (typeof v === "string") firestoreFields[k] = { stringValue: v };
-    else if (typeof v === "number") firestoreFields[k] = { integerValue: v };
-    else if (typeof v === "boolean") firestoreFields[k] = { booleanValue: v };
+    if (typeof v === 'string') firestoreFields[k] = { stringValue: v };
+    else if (typeof v === 'number') firestoreFields[k] = { integerValue: v };
+    else if (typeof v === 'boolean') firestoreFields[k] = { booleanValue: v };
     else firestoreFields[k] = { nullValue: null };
   }
 
@@ -82,10 +83,10 @@ export async function setFirestoreDoc(
     `${collectionPath}/${docId}`;
 
   const res = await fetch(url, {
-    method: "PATCH",
+    method: 'PATCH',
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer owner",
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer owner',
     },
     body: JSON.stringify({ fields: firestoreFields }),
   });
@@ -96,7 +97,7 @@ export async function setFirestoreDoc(
 export async function clearFirestoreEmulator(): Promise<void> {
   await fetch(
     `${FIRESTORE_EMULATOR}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`,
-    { method: "DELETE" }
+    { method: 'DELETE' },
   );
 }
 
@@ -118,11 +119,17 @@ export interface SeededStudent {
  * Seeds a student user in Auth + Firestore users collection.
  * Returns uid, email, password for use in tests.
  */
-export async function seedStudent(suffix = Date.now().toString()): Promise<SeededStudent> {
+export async function seedStudent(
+  suffix = Date.now().toString(),
+): Promise<SeededStudent> {
   const email = `student-${suffix}@vsu.edu`;
-  const password = "TestPass123!";
+  const password = 'TestPass123!';
   const uid = await createEmulatorUser(email, password);
-  await setFirestoreDoc("users", uid, { email, role: "student", verified: true });
+  await setFirestoreDoc('users', uid, {
+    email,
+    role: 'student',
+    verified: true,
+  });
   return { uid, email, password };
 }
 
@@ -130,11 +137,13 @@ export async function seedStudent(suffix = Date.now().toString()): Promise<Seede
  * Seeds an admin user in Auth + Firestore users collection.
  * Returns uid, email, password for use in tests.
  */
-export async function seedAdmin(suffix = Date.now().toString()): Promise<SeededAdmin> {
-  const email = `admin-${suffix}@vsu.edu`;
-  const password = "AdminPass123!";
+export async function seedAdmin(
+  suffix = Date.now().toString(),
+): Promise<SeededAdmin> {
+  const email = `Keva4364@students.vsu.edu`;
+  const password = 'Hellokitty@333';
   const uid = await createEmulatorUser(email, password);
-  await setFirestoreDoc("users", uid, { email, role: "admin", verified: true });
+  await setFirestoreDoc('users', uid, { email, role: 'admin', verified: true });
   return { uid, email, password };
 }
 
@@ -143,8 +152,8 @@ export async function seedAdmin(suffix = Date.now().toString()): Promise<SeededA
  */
 export async function seedElection(
   electionId: string,
-  status: "draft" | "open" | "closed" = "open",
-  title = "Student Government Election 2026"
+  status: 'draft' | 'open' | 'closed' = 'open',
+  title = 'Student Government Election 2026',
 ): Promise<void> {
-  await setFirestoreDoc("elections", electionId, { title, status });
+  await setFirestoreDoc('elections', electionId, { title, status });
 }
