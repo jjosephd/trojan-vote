@@ -4,7 +4,7 @@ Test Plan & Results
 
 Project Deliverable 5
 
-Group Members: NeVaeh Dabney-Rich, Jordan Daniels, Adeiyi Olajide, Kyra Evans, Munso Bwalya
+Group Members: NeVaeh Dabney-Rich, Jordan Daniel, Adeiyi Olajide, Kyra Evans, Munso Bwalya
 
 Course: CSCI 487 – Software Design & Development
 

@@ -110,7 +110,7 @@ export default function App() {
       {page === 'results'    && <ResultsPage />}
       {page === 'admin'      && user.role === 'admin' && <AdminDashboard />}
       {page === 'admin'      && user.role !== 'admin' && (
-        <div style={{ padding: 60, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>
+        <div data-testid="access-denied-message" style={{ padding: 60, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>
           <h2>Access Denied</h2>
           <p style={{ color: '#6b7280', marginTop: 8 }}>
             You need admin privileges to view this page.

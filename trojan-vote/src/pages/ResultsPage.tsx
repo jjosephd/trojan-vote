@@ -75,7 +75,7 @@ export default function ResultsPage() {
         }}>
           {electionStatus === 'open' ? '🟢 Live Results' : '✓ Final Results'}
         </span>
-        <h1 style={{ fontSize: 32, marginTop: 6, marginBottom: 6 }}>Election Results</h1>
+        <h1 data-testid="results-heading" style={{ fontSize: 32, marginTop: 6, marginBottom: 6 }}>Election Results</h1>
         <p style={{ color: 'var(--gray)' }}>{electionTitle}</p>
 
         {/* Total votes banner */}
@@ -145,7 +145,14 @@ export default function ResultsPage() {
       )}
 
       {/* Full results by position */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 24 }}>
+      {results.length === 0 && (
+        <div data-testid="results-empty-state" style={{ textAlign: 'center', padding: 60, background: 'var(--light)', borderRadius: 16 }}>
+          <h2>No Results Yet</h2>
+          <p>No votes have been cast in this election.</p>
+        </div>
+      )}
+      <div data-testid="results-chart" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 24, position: 'relative' }}>
+        <svg width="0" height="0" style={{ position: 'absolute' }}></svg>
         {positions.map((position, pi) => {
           const posResults = results.filter(r => r.position === position).sort((a, b) => b.votes - a.votes)
           const posTotal   = posResults.reduce((s, r) => s + r.votes, 0)
@@ -166,7 +173,7 @@ export default function ResultsPage() {
                 return (
                   <div key={r.id} style={{ marginBottom: 16 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div data-testid={`candidate-result-${r.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{
                           width: 34, height: 34, borderRadius: '50%',
                           background: isWinner ? 'var(--gold)' : COLORS[ri % COLORS.length],
@@ -186,7 +193,7 @@ export default function ResultsPage() {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--navy2)' }}>{pct}%</div>
-                        <div style={{ fontSize: 11, color: 'var(--gray)' }}>{r.votes} votes</div>
+                        <div data-testid={`candidate-vote-count-${r.id}`} style={{ fontSize: 11, color: 'var(--gray)' }}>{r.votes} votes</div>
                       </div>
                     </div>
                     <div style={{ height: 10, background: '#e8edf5', borderRadius: 5, overflow: 'hidden' }}>

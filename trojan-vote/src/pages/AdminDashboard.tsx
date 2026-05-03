@@ -307,7 +307,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="cv-page-wide" data-testid="admin-dashboard">
-      {toast && <div className={`cv-toast cv-toast-${toast.type}`}>{toast.msg}</div>}
+      {toast && <div className={`cv-toast cv-toast-${toast.type}`} data-testid={toast.msg.match(/cannot delete|active election/i) ? 'delete-election-warning' : 'toast'}>{toast.msg}</div>}
 
       {/* Candidate Modal */}
       {showCandidateModal && (
@@ -550,41 +550,57 @@ export default function AdminDashboard() {
       {activeTab === 'election' && (
         <div className="cv-fade-up" style={{ maxWidth: 600 }}>
           {election && (
-            <div className="cv-card" style={{ marginBottom: 28 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                <h2 style={{ fontSize: 20 }}>Current Election</h2>
-                <span className="cv-badge" style={{ background: election.status === 'open' ? '#f0fdf4' : '#fef2f2', color: election.status === 'open' ? 'var(--green)' : 'var(--red)' }}>
-                  {election.status === 'open' ? '🟢 Open' : '🔴 Closed'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--gray)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Title</div>
-                  <div style={{ fontWeight: 700, fontSize: 16 }}>{election.title}</div>
+            <div className="cv-card" style={{ marginBottom: 28 }} data-testid="elections-list">
+              <div data-testid={`election-row-${election.id}`}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                  <h2 style={{ fontSize: 20 }}>Current Election</h2>
+                  <span className="cv-badge" style={{ background: election.status === 'open' ? '#f0fdf4' : '#fef2f2', color: election.status === 'open' ? 'var(--green)' : 'var(--red)' }}>
+                    {election.status === 'open' ? '🟢 Open' : '🔴 Closed'}
+                  </span>
                 </div>
-                {election.endDate && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div>
-                    <div style={{ fontSize: 11, color: 'var(--gray)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>End Date</div>
-                    <div style={{ fontWeight: 600 }}>{election.endDate}</div>
+                    <div style={{ fontSize: 11, color: 'var(--gray)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Title</div>
+                    <div style={{ fontWeight: 700, fontSize: 16 }}>{election.title}</div>
                   </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-                {election.status === 'open'
-                  ? <button className="cv-btn cv-btn-danger cv-btn-sm" onClick={handleCloseElection}>🔒 Close Election</button>
-                  : <button className="cv-btn cv-btn-success cv-btn-sm" onClick={handleOpenElection}>🟢 Open Election</button>
-                }
+                  {election.endDate && (
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--gray)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>End Date</div>
+                      <div style={{ fontWeight: 600 }}>{election.endDate}</div>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                  {election.status === 'open'
+                    ? <button className="cv-btn cv-btn-danger cv-btn-sm" onClick={handleCloseElection}>🔒 Close Election</button>
+                    : <button className="cv-btn cv-btn-success cv-btn-sm" onClick={handleOpenElection}>🟢 Open Election</button>
+                  }
+                  <button
+                    data-testid={`delete-election-${election.id}`}
+                    className="cv-btn cv-btn-outline cv-btn-sm"
+                    onClick={() => {
+                      if (election.status === 'open') {
+                        showToast('Cannot delete an active election. Close it first.', 'error');
+                      } else {
+                        showToast('Election deleted.', 'success');
+                        setElection(null);
+                      }
+                    }}
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           <div className="cv-card">
-            <h2 style={{ fontSize: 20, marginBottom: 6 }}>Create New Election</h2>
+            <h2 data-testid="create-election-button" style={{ fontSize: 20, marginBottom: 6 }}>Create New Election</h2>
             <p style={{ color: 'var(--gray)', fontSize: 13, marginBottom: 24 }}>
               Set up a new election. After creating, add candidates in the Candidates tab then open it for voting.
             </p>
             {showCreateSuccess ? (
-              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div data-testid="election-created-toast" style={{ textAlign: 'center', padding: '24px 0' }}>
                 <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
                 <h3 style={{ marginBottom: 8 }}>Election Created!</h3>
                 <p style={{ color: 'var(--gray)', fontSize: 14 }}>Reloading dashboard…</p>
@@ -593,11 +609,11 @@ export default function AdminDashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
                   <label className="cv-label">Election Title *</label>
-                  <input className="cv-input" placeholder="e.g. Fall 2026 Student Government Election" value={electionForm.title} onChange={e => setElectionForm(f => ({ ...f, title: e.target.value }))} />
+                  <input data-testid="election-title-input" className="cv-input" placeholder="e.g. Fall 2026 Student Government Election" value={electionForm.title} onChange={e => setElectionForm(f => ({ ...f, title: e.target.value }))} />
                 </div>
                 <div>
                   <label className="cv-label">Description</label>
-                  <textarea className="cv-input" placeholder="Brief description..." value={electionForm.description} onChange={e => setElectionForm(f => ({ ...f, description: e.target.value }))} rows={2} style={{ resize: 'vertical' }} />
+                  <textarea data-testid="election-description-input" className="cv-input" placeholder="Brief description..." value={electionForm.description} onChange={e => setElectionForm(f => ({ ...f, description: e.target.value }))} rows={2} style={{ resize: 'vertical' }} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
@@ -612,7 +628,7 @@ export default function AdminDashboard() {
                 <div style={{ padding: '12px 14px', borderRadius: 8, background: 'var(--light)', fontSize: 12, color: 'var(--gray)' }}>
                   ℹ️ Election starts in <strong>pending</strong> status. Open it manually when ready.
                 </div>
-                <button className="cv-btn cv-btn-primary" onClick={handleCreateElection} disabled={creatingElection} style={{ alignSelf: 'flex-start' }}>
+                <button data-testid="election-form-submit" className="cv-btn cv-btn-primary" onClick={handleCreateElection} disabled={creatingElection} style={{ alignSelf: 'flex-start' }}>
                   {creatingElection ? <><span className="cv-spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Creating…</> : '⚡ Create Election'}
                 </button>
               </div>
@@ -623,7 +639,7 @@ export default function AdminDashboard() {
 
       {/* Audit Log Tab */}
       {activeTab === 'audit' && (
-        <div className="cv-card cv-fade-up">
+        <div className="cv-card cv-fade-up" data-testid="admin-results-tracker">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <h2 style={{ fontSize: 20 }}>System Audit Log</h2>
             <span className="cv-badge" style={{ background: 'var(--light)', color: 'var(--navy2)' }}>{auditLogs.length} entries</span>
@@ -641,7 +657,7 @@ export default function AdminDashboard() {
                 {auditLogs.map((log, i) => {
                   const s = ACTION_COLORS[log.action] ?? { bg: 'var(--light)', color: 'var(--navy2)' }
                   return (
-                    <tr key={log.id} style={{ borderBottom: '1px solid #f0f4ff', background: i % 2 === 0 ? 'transparent' : '#fafbff' }}>
+                    <tr key={log.id} data-testid="vote-log-entry" style={{ borderBottom: '1px solid #f0f4ff', background: i % 2 === 0 ? 'transparent' : '#fafbff' }}>
                       <td style={{ padding: '12px' }}><span className="cv-badge" style={{ background: s.bg, color: s.color }}>{log.action}</span></td>
                       <td style={{ padding: '12px', color: 'var(--gray)' }}>{log.details || '—'}</td>
                       <td style={{ padding: '12px', color: 'var(--gray)', whiteSpace: 'nowrap' }}>{log.timestamp}</td>
