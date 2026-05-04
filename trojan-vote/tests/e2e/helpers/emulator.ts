@@ -16,7 +16,10 @@ const FIRESTORE_EMULATOR = `http://127.0.0.1:8080`;
 
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 
-/** Creates a user account in the Auth emulator and returns the new uid. */
+/** Creates a user account in the Auth emulator and returns the new uid.
+ *  If the account already exists (EMAIL_EXISTS) it signs in instead and
+ *  returns the existing uid — making this call idempotent.
+ */
 export async function createEmulatorUser(
   email: string,
   password: string,
@@ -29,9 +32,26 @@ export async function createEmulatorUser(
       body: JSON.stringify({ email, password, returnSecureToken: true }),
     },
   );
-  if (!res.ok)
-    throw new Error(`createEmulatorUser failed: ${await res.text()}`);
-  const json = await res.json();
+  const text = await res.text();
+  if (!res.ok) {
+    if (text.includes('EMAIL_EXISTS')) {
+      // Account already seeded — sign in to retrieve the existing uid
+      return signInEmulatorUser(email, password).then(async () => {
+        const signinRes = await fetch(
+          `${AUTH_EMULATOR}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-api-key`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, returnSecureToken: true }),
+          },
+        );
+        const signinJson = await signinRes.json();
+        return signinJson.localId as string;
+      });
+    }
+    throw new Error(`createEmulatorUser failed: ${text}`);
+  }
+  const json = JSON.parse(text);
   return json.localId as string;
 }
 
@@ -145,6 +165,28 @@ export async function seedAdmin(
   const uid = await createEmulatorUser(email, password);
   // Wait for the onUserCreate Cloud Function trigger to finish writing its
   // default { role: 'student' } doc before we overwrite it with role: 'admin'.
+  await new Promise((r) => setTimeout(r, 1_500));
+  await setFirestoreDoc('users', uid, { email, role: 'admin', verified: true });
+  return { uid, email, password };
+}
+
+// ── Stable dev-admin seed ─────────────────────────────────────────────────────
+
+/** Credentials that match the stable dev-admin seeded by `npm run seed:admin`. */
+export const STABLE_ADMIN = {
+  email: 'admin@vsu.edu',
+  password: 'Admin1234!',
+} as const;
+
+/**
+ * Ensures the stable admin@vsu.edu account exists in the Auth + Firestore
+ * emulators.  Safe to call multiple times — will not error if the account was
+ * already created by a previous test run or the seed:admin script.
+ */
+export async function seedStableAdmin(): Promise<SeededAdmin> {
+  const { email, password } = STABLE_ADMIN;
+  const uid = await createEmulatorUser(email, password);
+  // Brief pause in case an onUserCreate trigger writes a default 'student' doc
   await new Promise((r) => setTimeout(r, 1_500));
   await setFirestoreDoc('users', uid, { email, role: 'admin', verified: true });
   return { uid, email, password };

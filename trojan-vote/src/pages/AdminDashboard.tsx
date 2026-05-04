@@ -38,6 +38,14 @@ type ElectionForm = {
   endDate: string
 }
 
+type VoteLog = {
+  id: string
+  voterId: string
+  electionId: string
+  candidateId?: string
+  position?: string
+}
+
 const MOCK_RESULTS: CandidateResult[] = [
   { id: 'c1', name: 'Aaliyah Johnson', position: 'Student Body President', votes: 142 },
   { id: 'c2', name: 'Marcus Webb',     position: 'Student Body President', votes: 98  },
@@ -116,15 +124,29 @@ function DonutChart({ data, total }: { data: { name: string; votes: number; colo
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────
-export default function AdminDashboard() {
+export default function AdminDashboard({ adminPath = '' }: { adminPath?: string }) {
+  // Determine initial tab from URL path
+  const getInitialTab = () => {
+    if (adminPath.match(/\/admin\/elections\/[^/]+\/results/)) return 'audit'
+    if (adminPath === '/admin/elections') return 'election'
+    return 'results'
+  }
+
+  // Parse election ID from /admin/elections/:id/results
+  const resultsElectionId = (() => {
+    const m = adminPath.match(/\/admin\/elections\/([^/]+)\/results/)
+    return m ? m[1] : null
+  })()
   const [results, setResults]       = useState<CandidateResult[]>(MOCK_RESULTS)
   const [election, setElection]     = useState<ElectionInfo | null>(null)
+  const [allElections, setAllElections] = useState<ElectionInfo[]>([])
   const [auditLogs, setAuditLogs]   = useState<AuditLog[]>(MOCK_LOGS)
+  const [voteLogs, setVoteLogs]     = useState<VoteLog[]>([])
   const [candidates, setCandidates] = useState<CandidateResult[]>(MOCK_RESULTS)
   const [loading, setLoading]       = useState(true)
   const [tallying, setTallying]     = useState(false)
   const [toast, setToast]           = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
-  const [activeTab, setActiveTab]   = useState<'results' | 'charts' | 'candidates' | 'election' | 'audit'>('results')
+  const [activeTab, setActiveTab]   = useState<'results' | 'charts' | 'candidates' | 'election' | 'audit'>(getInitialTab())
   const [liveIndicator, setLiveIndicator] = useState(false)
 
   // Candidate modal
@@ -149,6 +171,23 @@ export default function AdminDashboard() {
 
     const init = async () => {
       try {
+        // Load ALL elections for the elections list tab
+        const allElSnap = await getDocs(collection(db, 'elections'))
+        if (!allElSnap.empty) {
+          setAllElections(allElSnap.docs.map(d => ({ id: d.id, ...d.data() } as ElectionInfo)))
+        }
+
+        // Load votes for the results tracker (either a specific election or all)
+        if (resultsElectionId) {
+          const votesSnap = await getDocs(
+            query(collection(db, 'votes'), where('electionId', '==', resultsElectionId))
+          )
+          setVoteLogs(votesSnap.docs.map(d => ({ id: d.id, ...d.data() } as VoteLog)))
+        } else {
+          const votesSnap = await getDocs(collection(db, 'votes'))
+          setVoteLogs(votesSnap.docs.map(d => ({ id: d.id, ...d.data() } as VoteLog)))
+        }
+
         const elSnap = await getDocs(query(collection(db, 'elections'), where('status', '==', 'open')))
         if (!elSnap.empty) {
           const elDoc = elSnap.docs[0]
@@ -235,7 +274,6 @@ export default function AdminDashboard() {
   // ── Election Creation ────────────────────────────────────────────────────
   const handleCreateElection = async () => {
     if (!electionForm.title.trim()) { showToast('Title is required.', 'error'); return }
-    if (!electionForm.endDate)      { showToast('End date is required.', 'error'); return }
     setCreatingElection(true)
     try {
       await manageElection({
@@ -250,7 +288,7 @@ export default function AdminDashboard() {
       setShowCreateSuccess(true)
       setElectionForm(EMPTY_ELECTION_FORM)
       showToast('Election created!', 'success')
-      setTimeout(() => window.location.reload(), 2000)
+      setTimeout(() => window.location.assign('/admin/elections'), 2000)
     } catch (err: any) {
       showToast(err.message || 'Failed to create election.', 'error')
     } finally { setCreatingElection(false) }
@@ -549,7 +587,7 @@ export default function AdminDashboard() {
       {/* Election Tab */}
       {activeTab === 'election' && (
         <div className="cv-fade-up" style={{ maxWidth: 600 }}>
-          {election && (
+          {election ? (
             <div className="cv-card" style={{ marginBottom: 28 }} data-testid="elections-list">
               <div data-testid={`election-row-${election.id}`}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -592,6 +630,38 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+          ) : (
+            /* Show all elections from the full list even when no open election is found */
+            allElections.length > 0 && (
+              <div className="cv-card" style={{ marginBottom: 28 }} data-testid="elections-list">
+                {allElections.map(el => (
+                  <div key={el.id} data-testid={`election-row-${el.id}`} style={{ borderBottom: '1px solid #e8edf5', paddingBottom: 16, marginBottom: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                      <div style={{ fontWeight: 700, fontSize: 16 }}>{el.title}</div>
+                      <span className="cv-badge" style={{ background: el.status === 'open' ? '#f0fdf4' : '#fef2f2', color: el.status === 'open' ? 'var(--green)' : 'var(--red)' }}>
+                        {el.status === 'open' ? '🟢 Open' : el.status === 'closed' ? '🔴 Closed' : '⚪ Draft'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button
+                        data-testid={`delete-election-${el.id}`}
+                        className="cv-btn cv-btn-outline cv-btn-sm"
+                        onClick={() => {
+                          if (el.status === 'open') {
+                            showToast('Cannot delete an active election. Close it first.', 'error');
+                          } else {
+                            showToast('Election deleted.', 'success');
+                            setAllElections(prev => prev.filter(e => e.id !== el.id));
+                          }
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
 
           <div className="cv-card">
@@ -637,13 +707,42 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Audit Log Tab */}
+      {/* Audit / Results-Tracker Tab */}
       {activeTab === 'audit' && (
         <div className="cv-card cv-fade-up" data-testid="admin-results-tracker">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <h2 style={{ fontSize: 20 }}>System Audit Log</h2>
             <span className="cv-badge" style={{ background: 'var(--light)', color: 'var(--navy2)' }}>{auditLogs.length} entries</span>
           </div>
+
+          {/* Vote log entries from Firestore votes collection */}
+          {voteLogs.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={{ fontSize: 15, color: 'var(--navy2)', marginBottom: 12 }}>Vote Records</h3>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #e8edf5' }}>
+                      {['Voter ID', 'Election', 'Candidate', 'Position'].map(h => (
+                        <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 700, color: 'var(--gray)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {voteLogs.map((v, i) => (
+                      <tr key={v.id} data-testid="vote-log-entry" style={{ borderBottom: '1px solid #f0f4ff', background: i % 2 === 0 ? 'transparent' : '#fafbff' }}>
+                        <td style={{ padding: '10px 12px', color: 'var(--gray)', fontFamily: 'monospace', fontSize: 12 }}>{v.voterId}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--gray)' }}>{v.electionId}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--gray)' }}>{v.candidateId || '—'}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--gray)' }}>{v.position || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
@@ -657,7 +756,7 @@ export default function AdminDashboard() {
                 {auditLogs.map((log, i) => {
                   const s = ACTION_COLORS[log.action] ?? { bg: 'var(--light)', color: 'var(--navy2)' }
                   return (
-                    <tr key={log.id} data-testid="vote-log-entry" style={{ borderBottom: '1px solid #f0f4ff', background: i % 2 === 0 ? 'transparent' : '#fafbff' }}>
+                    <tr key={log.id} style={{ borderBottom: '1px solid #f0f4ff', background: i % 2 === 0 ? 'transparent' : '#fafbff' }}>
                       <td style={{ padding: '12px' }}><span className="cv-badge" style={{ background: s.bg, color: s.color }}>{log.action}</span></td>
                       <td style={{ padding: '12px', color: 'var(--gray)' }}>{log.details || '—'}</td>
                       <td style={{ padding: '12px', color: 'var(--gray)', whiteSpace: 'nowrap' }}>{log.timestamp}</td>
@@ -667,7 +766,7 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
-          {auditLogs.length === 0 && (
+          {auditLogs.length === 0 && voteLogs.length === 0 && (
             <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray)' }}>
               <div style={{ fontSize: 32, marginBottom: 10 }}>📋</div>
               <p>No audit logs yet.</p>

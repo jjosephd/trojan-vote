@@ -15,7 +15,8 @@
 import { test, expect, Page } from '@playwright/test';
 import {
   seedStudent,
-  seedAdmin,
+  seedStableAdmin,
+  STABLE_ADMIN,
   seedElection,
   setFirestoreDoc,
   clearAuthEmulator,
@@ -27,6 +28,9 @@ import {
 test.beforeAll(async () => {
   await clearAuthEmulator();
   await clearFirestoreEmulator();
+  // Ensure the stable admin account (admin@vsu.edu) exists in the emulator.
+  // seedStableAdmin() is idempotent — safe to call even if seed:admin already ran.
+  await seedStableAdmin();
 });
 
 test.afterAll(async () => {
@@ -52,8 +56,7 @@ async function loginViaUI(
 // ── TC-12: Admin creates a new election ──────────────────────────────────────
 
 test('TC-12 | admin can create a new election end-to-end', async ({ page }) => {
-  const { email, password } = await seedAdmin('tc12');
-  await loginViaUI(page, email, password, /\/admin/);
+  await loginViaUI(page, STABLE_ADMIN.email, STABLE_ADMIN.password, /\/admin/);
 
   // Navigate to election management
   await page.click('[data-testid="admin-manage-elections"]');
@@ -89,9 +92,7 @@ test('TC-13 | admin gets a warning when trying to delete an active election', as
 }) => {
   const ACTIVE_ELECTION_ID = 'e2e-active-election';
   await seedElection(ACTIVE_ELECTION_ID, 'open', 'Active Election – TC-13');
-
-  const { email, password } = await seedAdmin('tc13');
-  await loginViaUI(page, email, password, /\/admin/);
+  await loginViaUI(page, STABLE_ADMIN.email, STABLE_ADMIN.password, /\/admin/);
 
   await page.goto('/admin/elections');
 
@@ -140,8 +141,7 @@ test('TC-14 | admin can view all submitted votes in the results tracker', async 
     position: 'Treasurer',
   });
 
-  const { email, password } = await seedAdmin('tc14');
-  await loginViaUI(page, email, password, /\/admin/);
+  await loginViaUI(page, STABLE_ADMIN.email, STABLE_ADMIN.password, /\/admin/);
 
   await page.goto(`/admin/elections/${TRACKED_ELECTION_ID}/results`);
 
