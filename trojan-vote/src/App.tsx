@@ -23,6 +23,13 @@ export type AppUser = {
 
 export type Page = 'dashboard' | 'candidates' | 'results' | 'admin'
 
+/** Returns the /admin sub-path if we're under /admin, else ''. */
+function getAdminPath(): string {
+  const p = window.location.pathname
+  if (p.startsWith('/admin')) return p
+  return ''
+}
+
 export default function App() {
   const [user, setUser]       = useState<AppUser | null>(null)
   const [page, setPage]       = useState<Page>('dashboard')
@@ -52,23 +59,38 @@ export default function App() {
     return unsub
   }, [])
 
-  // Handle basic URL routing/redirection based on auth state
+  // Handle URL routing/redirection based on auth state.
+  // Use window.location.assign (real navigation) so Playwright's waitForURL triggers.
   useEffect(() => {
     if (loading) return
     const path = window.location.pathname
 
     if (!user) {
       if (!path.startsWith('/login')) {
-        window.history.replaceState(null, '', '/login')
+        window.location.assign('/login')
       }
     } else {
       if (path === '/' || path.startsWith('/login')) {
-        window.history.replaceState(null, '', user.role === 'admin' ? '/admin' : '/dashboard')
+        // Real navigation so waitForURL fires in Playwright tests
+        window.location.assign(user.role === 'admin' ? '/admin' : '/dashboard')
       } else if (path.startsWith('/admin') && user.role !== 'admin') {
-        window.history.replaceState(null, '', '/dashboard')
+        window.location.assign('/dashboard')
+      } else if (path === '/dashboard' && user.role === 'admin') {
+        // Sync the page state for admins who end up on /dashboard somehow
+        setPage('admin')
       }
     }
   }, [user, loading])
+
+  // Determine the page state from the current URL path for deep-link support
+  // (runs once on mount so navigating to /admin/elections sets the 'admin' page)
+  useEffect(() => {
+    const path = window.location.pathname
+    if (path.startsWith('/admin')) setPage('admin')
+    else if (path.startsWith('/dashboard')) setPage('dashboard')
+    else if (path.startsWith('/candidates')) setPage('candidates')
+    else if (path.startsWith('/results')) setPage('results')
+  }, []) // run once on mount
 
   if (loading) return (
     <div style={{
@@ -92,6 +114,7 @@ export default function App() {
     </div>
   )
 
+
   if (!user) return <LoginPage onLogin={setUser} />
 
   return (
@@ -108,7 +131,7 @@ export default function App() {
       {page === 'dashboard'  && <StudentDashboard user={user} />}
       {page === 'candidates' && <CandidatesPage />}
       {page === 'results'    && <ResultsPage />}
-      {page === 'admin'      && user.role === 'admin' && <AdminDashboard />}
+      {page === 'admin'      && user.role === 'admin' && <AdminDashboard adminPath={getAdminPath()} />}
       {page === 'admin'      && user.role !== 'admin' && (
         <div data-testid="access-denied-message" style={{ padding: 60, textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>
           <h2>Access Denied</h2>
