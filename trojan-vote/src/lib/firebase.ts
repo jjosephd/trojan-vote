@@ -24,10 +24,10 @@ const db = getFirestore(app);
 const functions = getFunctions(app);
 
 // Connect to emulators in development
-if (import.meta.env.DEV) {
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-}
+//if (import.meta.env.DEV) {
+  //connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  //connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  //connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+//}
 
 export { app, auth, db, functions };
