@@ -44,3 +44,7 @@ firestore-debug.log*
 pubsub-debug.log*
 ui-debug.log*
 firebase-export*
+
+# Emulator persistence — commit the seed snapshot, ignore runtime lock files
+emulator-data/.lock
+emulator-data/firebase-export-metadata.json
